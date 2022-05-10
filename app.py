@@ -11,7 +11,7 @@ from flask import Flask, jsonify
 #################################################
 # Database Setup
 #################################################
-engine = create_engine("sqlite:///titanic.sqlite")
+engine = create_engine("sqlite:///hawaii.sqlite")
 
 # reflect an existing database into a new model
 Base = automap_base()
@@ -19,7 +19,8 @@ Base = automap_base()
 Base.prepare(engine, reflect=True)
 
 # Save reference to the table
-Passenger = Base.classes.passenger
+Measurement = Base.classes.measurement
+Station = Base.classes.station
 
 #################################################
 # Flask Setup
@@ -36,49 +37,52 @@ def welcome():
     """List all available api routes."""
     return (
         f"Available Routes:<br/>"
-        f"/api/v1.0/names<br/>"
-        f"/api/v1.0/passengers"
+        f"/api/v1.0/precipitation<br/>"
+        f"/api/v1.0/stations<br/>"
+        f"/api/v1.0/tobs<br/>"
+        f"/api/v1.0/start<br/>"
+        f"/api/v1.0/start/end"
     )
 
 
-@app.route("/api/v1.0/names")
-def names():
+@app.route("/api/v1.0/precipitation")
+def precipitation():
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
-    """Return a list of all passenger names"""
-    # Query all passengers
-    results = session.query(Passenger.name).all()
+    """Precipitation"""
+    
+    results = session.query(Measurement.date, Measurement.prcp).all()
 
     session.close()
 
-    # Convert list of tuples into normal list
-    all_names = list(np.ravel(results))
+    all_precipitation = []
+    for date, prcp in results:
+        precipitation_dict = {}
+        precipitation_dict[date] = prcp
+        all_precipitation.append(precipitation_dict)
 
-    return jsonify(all_names)
+    return jsonify(all_precipitation)
 
 
-@app.route("/api/v1.0/passengers")
-def passengers():
+@app.route("/api/v1.0/stations")
+def stations():
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
-    """Return a list of passenger data including the name, age, and sex of each passenger"""
-    # Query all passengers
-    results = session.query(Passenger.name, Passenger.age, Passenger.sex).all()
+    """Station"""
+    
+    results = session.query(Station.station, Station.id).all()
 
     session.close()
 
-    # Create a dictionary from the row data and append to a list of all_passengers
-    all_passengers = []
-    for name, age, sex in results:
-        passenger_dict = {}
-        passenger_dict["name"] = name
-        passenger_dict["age"] = age
-        passenger_dict["sex"] = sex
-        all_passengers.append(passenger_dict)
+    all_stations = []
+    for station, id in results:
+        station_dict = {}
+        station_dict[id] = station
+        all_stations.append(station_dict)
 
-    return jsonify(all_passengers)
+    return jsonify(all_stations)
 
 
 if __name__ == '__main__':
